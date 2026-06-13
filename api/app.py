@@ -9,6 +9,7 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
 from starlette.types import Receive, Scope, Send
@@ -97,6 +98,16 @@ def create_app(*, lifespan_enabled: bool = True) -> FastAPI:
     if lifespan_enabled:
         app_kwargs["lifespan"] = lifespan
     app = FastAPI(**app_kwargs)
+
+    # CORS for loopback browser UIs (pulseos LocalDevToolsCard reads /v1/models).
+    # Narrowly scoped: only same-machine origins, only safe verbs, no credentials.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+        allow_credentials=False,
+        allow_methods=["GET", "OPTIONS"],
+        allow_headers=["*"],
+    )
 
     @app.middleware("http")
     async def trace_http_correlation(request: Request, call_next):

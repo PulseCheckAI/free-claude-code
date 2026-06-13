@@ -229,9 +229,13 @@ async def probe_health():
 async def list_models(
     request: Request,
     settings: Settings = Depends(get_settings),
-    _auth=Depends(require_api_key),
 ):
-    """List the model ids this proxy advertises to Claude-compatible clients."""
+    """List the model ids this proxy advertises to Claude-compatible clients.
+
+    Intentionally public: returns a static enumeration with no upstream call
+    and no secrets, so loopback UIs (e.g. pulseos LocalDevToolsCard) can render
+    "N models routed" without holding the proxy key.
+    """
     trace_event(stage="ingress", event="api.models.list", source="api")
     registry = getattr(request.app.state, "provider_registry", None)
     provider_registry = registry if isinstance(registry, ProviderRegistry) else None
